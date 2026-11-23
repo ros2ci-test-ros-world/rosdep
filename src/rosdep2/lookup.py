@@ -500,7 +500,13 @@ class RosdepLookup(object):
             installer = installer_context.get_installer(installer_key)
         except KeyError:
             raise ResolutionError(rosdep_key, definition.data, os_name, os_version, 'Unsupported installer [%s]' % (installer_key))
-        resolution = installer.resolve(rosdep_args_dict)
+        try:
+            resolution = installer.resolve(rosdep_args_dict)
+        except InvalidData as e:
+            # An installer may refuse a rule that names something it cannot
+            # supply, such as a conda package with no pinned version. That
+            # is a key that does not resolve on this platform.
+            raise ResolutionError(rosdep_key, definition.data, os_name, os_version, str(e))
         dependencies = installer.get_depends(rosdep_args_dict)
 
         # cache value
